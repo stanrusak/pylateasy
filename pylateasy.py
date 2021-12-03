@@ -97,6 +97,13 @@ def progress(tf, update_interval=2):
         
         file = os.path.join(LE_DIR, "output.txt")
         while True:
+
+            # check that output file exists
+            if not os.path.isfile(file):
+                print("No file yet. Waiting...")
+                sleep(update_interval)
+                continue
+
             with open(file, "r") as f:
                 lines = f.readlines()
                 if lines:
@@ -148,6 +155,29 @@ def get_fields(DIR=LE_DIR, rescale=1):
 
     return (means, variances)
 
+def plot_energies(energies, yscale='log', show=True):
+    """ Plot energy densities """
+
+    fig = go.Figure()
+    time = energies["t_pr"]
+    
+    for component in energies.columns[1:]:
+        fig.add_trace(go.Scatter(x=time, y=energies[component], name=component))
+    
+    fig.update_yaxes(exponentformat="power", type=yscale, title="energy density")
+    fig.update_xaxes(title="t_pr")
+    
+    if show:
+        fig.show()
+
+    return fig
+
+class Energies(pd.DataFrame):
+    """ Object containing energy densities. Extends pandas dataframe with specific plotting. """
+
+    def plot(self):
+        plot_energies(self)
+
 def get_energies(DIR=LE_DIR, names=''):
     """ Import energies """
 
@@ -161,7 +191,7 @@ def get_energies(DIR=LE_DIR, names=''):
     else:
         energy = pd.DataFrame()
 
-    return energy
+    return Energies(energy)
 
 class PowerSpectrum(pd.DataFrame):
     
