@@ -3,10 +3,14 @@ from time import sleep
 from threading import Thread
 import pandas as pd
 import numpy as np
-import os
 import subprocess
+import os
 
+# plotting with plotly
+import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from plotly.colors import sample_colorscale
 
 LE_DIR = os.path.join(os.getcwd(), 'LATTICEEASY') # latticeeasy directory; by default LATTICEEASY in the same path
 PLOTTER = "plotly"  # which plotting engine to use
@@ -35,12 +39,12 @@ def write_param_file(params, DIR, NDIMS):
     # update parameters    
     for i,line in enumerate(lines):
         if "const int" in line:
-            param_name = line[10:].split("=")[0]
+            param_name = line[10:].split("=")[0].strip()
             comment_line = line.split(";")[1]
             if param_name in params.keys():
                 lines[i] = "const int " + param_name + "=" + str(params[param_name]) + ";" + comment_line
         elif "const float" in line:
-            param_name = line[12:].split("=")[0]
+            param_name = line[12:].split("=")[0].strip()
             comment_line = line.split(";")[1]
             if param_name in params.keys():
                 lines[i] = "const float " + param_name + "=" + str(params[param_name]) + ";" + comment_line
@@ -193,6 +197,47 @@ def get_energies(DIR=LE_DIR, names=''):
 
     return Energies(energy)
 
+def plot_spectra(nk_data, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto', title=''):
+    """ Plot spectra given a povot table of data"""
+    
+    # choose the initial and final times for the spectra
+    t_min = nk_data.columns[0] if t_min=='all' else t_min
+    t_max = nk_data.columns[-1] if t_max=='all' else t_max
+
+    # create a curresponding subset of the spectra
+    nk_slice = nk_data[nk_data.columns[t_min<=nk_data.columns]]
+    nk_slice = nk_slice[nk_slice.columns[t_max>=nk_slice.columns]]
+    if time_skip>1:
+        nk_slice = nk_slice[nk_slice.columns[::time_skip]]
+        
+    # determine range and type of plot
+    vmax = 1.5*nk_slice.max().max()
+    vmin = 0
+    if vmax > 100:
+        yscale = 'log' if yscale == 'auto' else yscale
+    else:
+        yscale = 'linear' if yscale == 'auto' else yscale
+    if yscale == 'log':
+        vmax = np.log10(vmax)
+        vmin = -.5
+
+
+    if type(colorscale)==int:
+            colorscale=["balance", "icefire", "jet"][colorscale]
+            
+    colors = sample_colorscale(colorscale,nk_slice.shape[1])
+    fig = go.Figure()
+
+    for i, tau in enumerate(nk_slice.columns):
+        spectrum = nk_slice[tau]
+        fig.add_trace(go.Scatter(x=spectrum.index, y=spectrum, line=dict(color=colors[i])))
+
+    fig.update_yaxes(exponentformat="power", title="n_k", type=yscale, range=(vmin,vmax))
+    fig.update_xaxes(type=xscale, title="k_pr")
+    fig.update_layout(showlegend=False, title=title)
+    fig.show()
+
+
 class PowerSpectrum(pd.DataFrame):
     
     """ Spectrum object. Extends DataFrame by making it callable. Normally returns a pivot table of nk(tau, k).
@@ -221,6 +266,20 @@ class PowerSpectrum(pd.DataFrame):
                 
                 if kvar >= k:
                     return self.loc[kvar]
+
+class Spectra:
+    """ Object containing the spectra for both fields for plotting"""
+
+    def __init__(self, spectra):
+
+        self.nk_phi, self.nk_chi = spectra
+    
+    def plot(self,t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto'):
+        
+        plot_spectra(self.nk_phi, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto', title="phi spectrum")
+        plot_spectra(self.nk_chi, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto', title="chi spectrum")
+
+
 
 def get_spectra(DIR=LE_DIR):
 
@@ -310,7 +369,7 @@ class Run(RunTemplate):
         self.energies = get_energies(DIR=DIR)
 
         # import spectra
-        self.nk_phi, self.nk_chi = get_spectra(DIR=DIR)
+        self.spectra = Spectra(get_spectra(DIR=DIR))
 
     def plot(self,**kwargs):
 
