@@ -305,6 +305,34 @@ def get_spectra(DIR=LE_DIR):
 
     return (nk_phi, nk_chi)
 
+class Slices:
+
+    def __init__(self, DIR=LE_DIR):
+        
+        self.phi_slices, self.chi_slices, self.slicetimes = get_slices(DIR=DIR)
+
+    def plot(self, time=-1):
+
+        fig = make_subplots(1, 2, horizontal_spacing=0.2)
+        fig.add_trace(go.Heatmap(z=self.phi_slices[time], colorbar_x=0.45, colorscale='viridis'), 1, 1)
+        fig.add_trace(go.Heatmap(z=self.chi_slices[time], colorscale= 'RdBu'), 1, 2)
+        fig.show()
+
+def get_slices(DIR=LE_DIR):
+
+    # import slice data for the fields
+    phi_slices = np.loadtxt(os.path.join(DIR, "slices0_0.dat"))
+    chi_slices = np.loadtxt(os.path.join(DIR, "slices1_0.dat"))
+
+    # import slice time data
+    slicetimes = np.loadtxt(os.path.join(DIR, "slicetimes_0.dat"))
+    side = int(np.sqrt(len(phi_slices)/len(slicetimes)))
+
+    # reshape
+    phi_slices = phi_slices.reshape(len(slicetimes), side, side)
+    chi_slices = chi_slices.reshape(len(slicetimes), side, side)
+    
+    return phi_slices, chi_slices, slicetimes
 
 def compare_models(models, legend='', legend_title='', title='', returns=False):
     
@@ -370,6 +398,9 @@ class Run(RunTemplate):
 
         # import spectra
         self.spectra = Spectra(get_spectra(DIR=DIR))
+
+        # import slices
+        self.slices = Slices(DIR=DIR)
 
     def plot(self,**kwargs):
 
