@@ -1,8 +1,16 @@
 # temporary files
-LATTICEEASY/
 LE_DATA/
 latticeeasy.py
-pylateasy.ipynb
+latticeeasy
+
+# lattice image files
+*.img
+
+# text files 
+*.txt
+
+# object files
+*.o
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

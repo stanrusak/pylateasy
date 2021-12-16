@@ -257,7 +257,7 @@ class PowerSpectrum(pd.DataFrame):
             for tvar in self.columns:
                 
                 if t <= tvar:
-                    return self[var]
+                    return self[tvar]
         
         # if called with k value 
         elif t=="end" and k != "full":

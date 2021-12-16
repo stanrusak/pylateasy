@@ -1,0 +1,27 @@
+--------------------------
+Model Specific Information
+--------------------------
+Two Field Lambda Model
+V = 1/4 lambda phi^4 + 1/2 g^2 phi^2 chi^2
+
+gl (g^2/lambda) = 300.000000
+lambda = 9.000000e-14
+rescale_A = 2.923977e+00
+rescale_B = 1.026000e-07
+rescale_r = 1.000000e+00
+rescale_s = -1.000000e+00
+
+--------------------------
+General Program Information
+-----------------------------
+Grid size=256^2
+Number of fields=2
+L=20.000000
+dt=0.020000, dt/dx=0.256000
+Expansion calculated self-consistently
+
+Run began at Wed Dec  8 19:15:13 2021
+Run ended at Wed Dec  8 19:16:01 2021
+
+Run from t=0.000000 to t=500.013763 took 48 seconds
+
