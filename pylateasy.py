@@ -159,7 +159,7 @@ def get_fields(DIR=LE_DIR, rescale=1):
 
     return (means, variances)
 
-def plot_energies(energies, yscale='log', show=True):
+def plot_energies(energies, yscale='log', show=True, format=None):
     """ Plot energy densities """
 
     fig = go.Figure()
@@ -172,15 +172,15 @@ def plot_energies(energies, yscale='log', show=True):
     fig.update_xaxes(title="t_pr")
     
     if show:
-        fig.show()
+        fig.show(format)
 
     return fig
 
 class Energies(pd.DataFrame):
     """ Object containing energy densities. Extends pandas dataframe with specific plotting. """
 
-    def plot(self):
-        plot_energies(self)
+    def plot(self, format=None):
+        plot_energies(self, format=format)
 
 def get_energies(DIR=LE_DIR, names=''):
     """ Import energies """
@@ -197,7 +197,7 @@ def get_energies(DIR=LE_DIR, names=''):
 
     return Energies(energy)
 
-def plot_spectra(nk_data, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto', title=''):
+def plot_spectra(nk_data, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto', title='', format=None):
     """ Plot spectra given a povot table of data"""
     
     # choose the initial and final times for the spectra
@@ -235,7 +235,7 @@ def plot_spectra(nk_data, t_min='all', t_max='all', time_skip=1, colorscale='bal
     fig.update_yaxes(exponentformat="power", title="n_k", type=yscale, range=(vmin,vmax))
     fig.update_xaxes(type=xscale, title="k_pr")
     fig.update_layout(showlegend=False, title=title)
-    fig.show()
+    fig.show(format)
 
 
 class PowerSpectrum(pd.DataFrame):
@@ -274,10 +274,10 @@ class Spectra:
 
         self.nk_phi, self.nk_chi = spectra
     
-    def plot(self,t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto'):
+    def plot(self, format=None, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto'):
         
-        plot_spectra(self.nk_phi, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto', title="phi spectrum")
-        plot_spectra(self.nk_chi, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto', title="chi spectrum")
+        plot_spectra(self.nk_phi, format=format, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto', title="phi spectrum")
+        plot_spectra(self.nk_chi, format=format, t_min='all', t_max='all', time_skip=1, colorscale='balance', xscale='log', yscale='auto', title="chi spectrum")
 
 
 
@@ -311,12 +311,14 @@ class Slices:
         
         self.phi_slices, self.chi_slices, self.slicetimes = get_slices(DIR=DIR)
 
-    def plot(self, time=-1):
+    def plot(self, t=-1, format=None):
 
         fig = make_subplots(1, 2, horizontal_spacing=0.2)
-        fig.add_trace(go.Heatmap(z=self.phi_slices[time], colorbar_x=0.45, colorscale='viridis'), 1, 1)
-        fig.add_trace(go.Heatmap(z=self.chi_slices[time], colorscale= 'RdBu'), 1, 2)
-        fig.show()
+        fig.add_trace(go.Heatmap(z=self.phi_slices[t], colorbar_x=0.45, colorscale='viridis'), 1, 1)
+        fig.add_trace(go.Heatmap(z=self.chi_slices[t], colorscale= 'RdBu'), 1, 2)
+        if format:
+            fig.update_layout(width=1000, height=500)
+        fig.show(format)
 
 def get_slices(DIR=LE_DIR):
 
@@ -334,7 +336,7 @@ def get_slices(DIR=LE_DIR):
     
     return phi_slices, chi_slices, slicetimes
 
-def compare_models(models, legend='', legend_title='', title='', returns=False):
+def compare_models(models, legend='', legend_title='', title='', returns=False, format=None):
     
     if legend == '':
         legend = [f"model {i}" for i in range(len(models))]
@@ -350,35 +352,35 @@ def compare_models(models, legend='', legend_title='', title='', returns=False):
 
     fig1.update_yaxes(exponentformat="power")
     fig1.update_layout(legend_title_text=legend_title, title=title, xaxis_title="t_pr", yaxis_title="phi")
-    fig1.show()
+    fig1.show(format)
     
     fig2.update_layout(legend_title_text=legend_title, title=title, xaxis_title="t_pr", yaxis_title="<chi^2>")
     fig2.update_yaxes(exponentformat="power", type="log")
-    fig2.show() 
+    fig2.show(format) 
 
     if returns:
         return [fig1, fig2]
 
-class RunTemplate:
-    """ Generic blueprint for a run  object """
-    pass
 
-class Run(RunTemplate):
+class Run:
 
     """ Run object """
 
     # get the lattice dimension
-    def __init__(self, parameters, DIR=LE_DIR, save_LE_data=False):
+    def __init__(self, parameters, DIR=LE_DIR, save_LE_data=False, spectra=True, slices=False):
 
         # if lattice dimension not given default to two
         if 'NDIMS' not in parameters:
             parameters['NDIMS'] =2
 
+        parameters["sspectra"] = int(spectra)
+        parameters["sslices"] = int(slices)
 
         # save parameters
         self.parameters = parameters
         for param, value in parameters.items():
             self.__dict__[param] = value
+
 
         # run latticeeasy
         run_with_progress(parameters, NDIMS=self.NDIMS, save_data=save_LE_data)
@@ -397,13 +399,15 @@ class Run(RunTemplate):
         self.energies = get_energies(DIR=DIR)
 
         # import spectra
-        self.spectra = Spectra(get_spectra(DIR=DIR))
+        if spectra:
+            self.spectra = Spectra(get_spectra(DIR=DIR))
 
         # import slices
-        self.slices = Slices(DIR=DIR)
+        if slices:
+            self.slices = Slices(DIR=DIR)
 
-    def plot(self,**kwargs):
+    def plot(self,format=None,**kwargs):
 
-        compare_models([self], **kwargs)
+        compare_models([self], format=format, **kwargs)
 
     

@@ -33,7 +33,7 @@ const char alt_extension[]=""; // Optional alternative extension for output file
 const int noutput_times=20000; // Number of times at which to calculate and save output variables
 const int print_interval=1; // Interval in seconds between successive outputs of time
 const int screen_updates=1; // Set to 1 for time to be periodically output to screen (0 otherwise)
-const float checkpoint_interval=0.5; // How often to output a grid image and perform infrequent calculations (see list below). Only done at end if checkpoint_interval=0.
+const float checkpoint_interval=10; // How often to output a grid image and perform infrequent calculations (see list below). Only done at end if checkpoint_interval=0.
 const float store_lattice_times[]={0.}; // An optional list of times at which to close the grid image file and open a new one.
 // The variables s<name> control what will be saved (1=save, 0=don't save)
 const int smeansvars=1; // Output means and variances. This function is also used to check for exponential instability, so it is generally wise to leave it on.
@@ -56,7 +56,7 @@ const int shistograms2d=1; // Output two dimensional histograms of fields
   const int nbins2d=10, nbins0=nbins2d, nbins1=nbins2d; // Number of bins in each field direction
   const float histogram2d_min=0., histogram2d_max=0.; // Upper and lower limits of the histograms. To use all current field values set these two to be equal.
   const int hist2dflds[]={0,1}; // Pairs of fields to be evaluated. This array should always contain an even number of integers.
-const int sslices=0; // Output the field values on a slice through the lattice
+const int sslices=1; // Output the field values on a slice through the lattice
   const float tslices=t_start_output;
   const int slicedim=2; // Dimensions of slice to be output. (If slicedim>=NDIMS the whole lattice will be output.) Warning: If slicedim=3 the resulting file may be very large.
   const int slicelength=N, sliceskip=2; // The slices will use every <sliceskip> point up to a total of <slicelength>.  Set length=N and skip=1 to output all points in the slice.

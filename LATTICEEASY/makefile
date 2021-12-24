@@ -4,10 +4,10 @@ all: latticeeasy.h model.h parameters.h ffteasy.o latticeeasy.o evolution.o init
 	$(COMPILER) $(FLAGS) ffteasy.o latticeeasy.o evolution.o initialize.o output.o -lm -o latticeeasy
 
 clean:
-	rm -f *.o out output.txt latticeeasy *~ *.dat core*
+	rm -f *.o out output.txt out.txt latticeeasy *~ *.dat core*
 
 cleaner:
-	rm -f *.o out output.txt latticeeasy *~ *.dat *.img
+	rm -f *.o out output.txt out.txt latticeeasy *~ *.dat *.img
 
 ffteasy.o: ffteasy.cpp
 	$(COMPILER) -c $(FLAGS) ffteasy.cpp
